@@ -1,7 +1,7 @@
 ---
 name: clean-code-branch-reduction
-description: 'Use when reviewing or refactoring code to remove unnecessary branching, reduce nesting, simplify conditionals, and improve cleanliness with guard clauses, early returns, and clearer intent.'
-argument-hint: '审查一段代码，重点检查分支和可读性'
+description: 'Use when reviewing or refactoring code to remove unnecessary branching, reduce nesting, simplify conditionals, improve cleanliness with guard clauses and early returns, and check initialization safety for map/pointer-like structures to avoid nil errors.'
+argument-hint: '审查一段代码，重点检查分支、可读性与初始化安全'
 user-invocable: true
 disable-model-invocation: false
 ---
@@ -15,6 +15,7 @@ disable-model-invocation: false
 - 代码在处理相同数据时分成了很多相似路径，但结果差异很小。
 - 条件判断已经开始影响主流程的可读性，导致主逻辑被淹没。
 - 想把“能合并的判断”与“必须保留的业务分支”区分开。
+- 涉及 map、切片、结构体指针、依赖对象等需要初始化的结构，担心 nil 指针或未初始化访问。
 
 ## 核心原则
 - 先保证行为不变，再谈结构优化。
@@ -41,7 +42,11 @@ disable-model-invocation: false
 5. 评估替代结构：
    - 少量固定分支：可以用 switch、映射表、策略函数、表驱动写法。
    - 分支里行为差异很大：保留分支，但考虑拆函数、拆对象、拆模块。
-6. 验证改动：
+6. 做初始化安全检查：
+   - 检查 map、切片、结构体指针、依赖对象在使用前是否已初始化。
+   - 检查可能写入 map 或调用对象方法的路径是否有前置保护，避免 nil 引发 panic。
+   - 对可为空的输入或返回值，尽量在入口做统一兜底或早返回。
+7. 验证改动：
    - 检查是否保持原行为。
    - 检查是否减少了嵌套层数、重复条件和局部认知跳跃。
    - 如果逻辑变复杂了，说明重构方向可能不对。
@@ -71,12 +76,18 @@ disable-model-invocation: false
 - 如果为了去掉分支而引入了多层抽象、过度泛化或难理解的模式，应该回退。
 - 清爽代码的目标是更少的心智负担，不是形式上的“没有 if”。
 
+### 7. 初始化安全优先
+- 在优化分支之前，先确认关键结构是否已初始化，尤其是 map 写入、指针方法调用、依赖对象访问。
+- 把初始化和默认值收口在入口或构造阶段，减少在主流程里到处分散判空。
+- 对外部注入对象、可选参数、懒加载字段，保留必要的 guard clause，避免空指针。
+
 ## 判断标准
 - 主流程是否比改动前更直接。
 - 分支数量、嵌套深度和重复判断是否减少。
 - 条件表达是否更接近业务语义。
 - 是否避免了引入无意义的抽象层。
 - 是否保留了原来的业务行为和错误处理。
+- map/指针等关键结构在使用路径上是否已明确初始化并有必要保护。
 
 ## 完成检查
 - 已识别所有显式分支和重复条件。
@@ -84,3 +95,4 @@ disable-model-invocation: false
 - 已尽量用早返回、归一化、映射表或函数拆分简化结构。
 - 已确认改动没有改变业务结果。
 - 已说明为什么保留的分支是必要的。
+- 已检查 map、结构体指针和依赖对象在使用前已初始化，避免 nil 指针风险。
