@@ -64,5 +64,12 @@ For multi-step tasks, state a brief plan:
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 ```
+## 5. Standard Compliance
+
+**Log generously. Follow conventions. Make debugging easy.**
+
+- Add logs at every meaningful branch: SQL query failures, error returns, condition entries/exits, and any other decision point that aids debugging.
+- Follow the codebase's existing conventions and best practices — naming, formatting, error handling patterns, and project-specific idioms.
+- Don't invent your own style; match what's already there.
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
